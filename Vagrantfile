@@ -82,8 +82,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         services_node.vm.box = services_node_settings['vb']['box']
 
-        services_node_ip_base = Integer(services_node_settings['vb']['external_ip_base']) + (i-1)
-        services_node_ip = generate_node_ip(vb_settings, services_node_ip_base)
+        # services_node_ip_base = Integer(services_node_settings['vb']['external_ip_base']) + (i-1)
+        # services_node_ip = generate_node_ip(vb_settings, services_node_ip_base)
         # puts "Services node IP address set to %s" % services_node_ip
 
         services_node.vm.network :private_network, ip: "172.16.2.#{i + 100}"
@@ -140,9 +140,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
       controller_node.vm.box = controller_node_settings['vb']['box']
 
-      controller_node_ip_base = Integer(controller_node_settings['vb']['external_ip_base'])
-      controller_node_ip = generate_node_ip(vb_settings, controller_node_ip_base)
-      # puts "Controller node IP address set to %s" % controller_node_ip
+      # controller_node_ip_base = Integer(controller_node_settings['vb']['external_ip_base'])
+      # controller_node_ip = generate_node_ip(vb_settings, controller_node_ip_base)
+      # # puts "Controller node IP address set to %s" % controller_node_ip
 
       controller_node.vm.network :private_network, ip: "172.16.2.10"
 
