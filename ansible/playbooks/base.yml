@@ -1,0 +1,79 @@
+---
+
+- name: Configure nodes within the service_nodes group
+
+  hosts: services_nodes
+
+  vars:
+
+    packages: [
+      python3-apt,
+      python3-pip,
+      git,
+      sshpass,
+      unzip,
+      curl,
+      apt-transport-https,
+      ca-certificates,
+      gnupg2,
+      software-properties-common,
+      dnsutils,
+    ]
+
+    python_modules: [
+      { name: docker },
+      { name: netaddr },
+      { name: python-consul },
+    ]
+
+    docker_install_compose: no
+
+  pre_tasks:
+
+    - name: Update host packages
+      become: yes
+      import_role:
+        name: greenthegarden.configure-host
+        tasks_from: run-package-update
+      run_once: yes
+      tags:
+        - base
+        - update
+
+    - name: Install dependencies
+      become: yes
+      import_role:
+        name: greenthegarden.configure-host
+        tasks_from: install-dependencies
+      tags:
+        - base
+        - dependencies
+
+  tasks:
+
+    - name: Install, configure and start Hashicorp Consul
+      become: yes
+      import_role:
+        name: brianshumate.consul
+
+    # - name: Install node-exporter
+    #   become: yes
+    #   import_role:
+    #     name: cloudalchemy.node-exporter
+
+    # - name: Install prometheus
+    #   become: yes
+    #   import_role:
+    #     name: cloudalchemy.prometheus
+
+    - name: Install, configure and start Docker
+      become: yes
+      import_role:
+        name: geerlingguy.docker
+      when: ansible_architecture is not search('arm')
+
+    - name: Install, configure and start Docker for ARM
+      become: yes
+      import_role:
+        name: geerlingguy.docker_arm
+      when: ansible_architecture is search('arm')

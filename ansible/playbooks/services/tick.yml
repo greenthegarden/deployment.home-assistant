@@ -1,0 +1,65 @@
+---
+
+- name: Install and configure TICK stack on nodes within the tick_instances group
+  
+  hosts: tick_instances
+
+  vars:
+
+    telegraf_global_tags:
+      - tag_name: user
+        tag_value: "telegraf"
+
+    telegraf_agent_output:
+      - type: influxdb
+        config:
+          - urls = ["http://{{ ansible_host }}:8086"]
+          - database = "{{ telegraf_database_name }}"
+          - precision = "s"
+          - password = "t#l#gr@f"
+
+    telegraf_plugins_default:
+      - plugin: cpu
+        config:
+          - percpu = true
+          - totalcpu = true
+          - collect_cpu_time = false
+          - report_active = false
+      - plugin: disk
+      - plugin: internal
+        config:
+          - collect_memstats = true
+      - plugin: io
+      - plugin: kernel
+      - plugin: mem
+      - plugin: net
+      - plugin: system
+      - plugin: swap
+      - plugin: netstat
+      - plugin: processes
+
+    telegraf_plugins_extra:
+      mqtt_consumer:
+        config:
+          - servers = ["tcp://{{ ansible_host }}:1883"]
+          - topics = [
+              "theairboard/+/measurement/dht22/temperature",
+              "enviroplus/+/weather",
+              "enviroplus/+/gas",
+              "enviroplus/+/dht22"
+            ]
+          - data_format = "influx"
+
+  pre_tasks:
+
+  tasks:
+
+    - name: Install and configure InfluxDB
+      import_role:
+        name: greenthegarden.influxdb
+        tasks_from: container
+
+    - name: Install and configure Telegraf
+      import_role:
+        name: dj-wasabi.telegraf
+

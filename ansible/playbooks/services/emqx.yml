@@ -1,0 +1,91 @@
+---
+
+- name: Install and configure EMQ-X broker on nodes within the emqx_instances group
+
+  hosts: emqx_instances
+
+  vars:
+
+    emqx_dir_config: "{{ storage_base.path }}/emqx/config"
+    emqx_env_file:  /tmp/emqx.env
+
+    emqx_image_name: emqx/emqx
+    emqx_image_tag: latest
+
+    emqx_service_name: emqx
+    emqx_service_ports_http: 18083
+    emqx_service_ports_mqtt: 1883
+    emqx_service_ports_ssl: 8883
+    emqx_service_ports_ws: 8083
+    emqx_service_ports_wss: 8084
+    emqx_service_ports_api: 18088
+    emqx_service_ports: [
+      { label: http, value: "{{ emqx_service_ports_http }}" },
+      { label: mqtt, value: "{{ emqx_service_ports_mqtt }}" },
+      { label: ssl, value: "{{ emqx_service_ports_ssl }}" },
+      { label: ws, value: "{{ emqx_service_ports_ws }}" },
+      { label: wss, value: "{{ emqx_service_ports_wss }}" },
+      { label: api, value: "{{ emqx_service_ports_api }}" }
+    ]
+    emqx_service_restart_policy: always
+
+    emqx_volume_data: emqx_data
+    emqx_volume_recreate: always # one of: always, never or options-changed
+
+    emqx_plugins: 'emqx_management,emqx_auth_username,emqx_auth_clientid,emqx_dashboard'
+    emqx_allow_anonymous: false | string
+    emqx_dashboard_default_user_name: ''
+    emqx_dashboard_default_user_password: ''
+
+  pre_tasks:
+
+  tasks:
+
+    - name: "Unregister {{ emqx_service_name }} service with the local consul agent"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: "{{ emqx_service_name }}-{{ item.value }}"
+        service_port: "{{ item.value | int }}"
+        # service_address: "{{ ansible_host }}"
+        state: absent
+      loop: "{{ emqx_service_ports }}"
+      when: service_consul_running
+
+    - name: Create environmental file
+      template:
+        src: "{{ playbook_dir }}/templates/emqx.env.j2"
+        dest: "{{ emqx_env_file }}"
+
+    - name: "Run image {{ emqx_image_name }}:{{ emqx_image_tag }} as service {{ emqx_service_name }}"
+      docker_container:
+        name: "{{ emqx_service_name }}"
+        image: "{{ emqx_image_name }}:{{ emqx_image_tag }}"
+        # env:
+        #   EMQX_LOADED_PLUGINS: "{{ emqx_plugins }}"
+        #   EMQX_ALLOW_ANONYMOUS: "{{ emqx_allow_anonymous }}"
+        #   EMQX_AUTH__USER__1__USERNAME: "{{ emqx_auth_user_name }}"
+        #   EMQX_AUTH__USER__1__PASSWORD: "{{ emqx_auth_user_password }}"
+        #   EMQX_DASHBOARD__DEFAULT__USER__LOGIN: "{{ emqx_dashboard_default_user_name }}"
+        #   EMQX_DASHBOARD__DEFAULT__USER__PASSWORD: "{{ emqx_dashboard_default_user_password }}"
+        env_file: "{{ emqx_env_file }}"
+        published_ports:
+          - "{{ emqx_service_ports_http }}:18083"
+          - "{{ emqx_service_ports_mqtt }}:1883"
+          - "{{ emqx_service_ports_ssl }}:8883"
+          - "{{ emqx_service_ports_ws }}:8083"
+          - "{{ emqx_service_ports_wss }}:8084"
+          - "{{ emqx_service_ports_api }}:8080"
+        recreate: yes
+        restart_policy: always
+        state: started
+      register: emqx_service_launched
+
+    - name: "Register {{ emqx_service_name }} service with the local consul agent"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: "{{ emqx_service_name }}-{{ item.value }}"
+        service_port: "{{ item.value | int }}"
+        # service_address: "{{ ansible_host }}"
+        state: present
+      loop: "{{ emqx_service_ports }}"
+      when: service_consul_running

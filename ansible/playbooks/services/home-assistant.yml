@@ -1,0 +1,79 @@
+---
+
+- name: Install and configure Nextcloud on nodes within the homeassistant_instances group
+  
+  hosts: homeassistant_instances
+
+  vars:
+
+    homeassistant_network: homeassistant_network
+
+    homeassistant_volume_data: homeassistant_data
+    homeassistant_volume_recreate: always # one of: always, never or options-changed
+
+    homeassistant_env_file: /tmp/nextcloud.env
+
+    homeassistant_service_name: homeassistant
+    homeassistant_service_ports_http: 8080
+    homeassistant_service_ports: [
+      { label: http, value: "{{ homeassistant_service_ports_http }}" }
+    ]
+
+    homeassistant_image_name: homeassistant/home-assistant
+    homeassistant_image_tag: latest
+
+  pre_tasks:
+
+  tasks:
+
+    - name: "Unregister {{ homeassistant_service_name }} service with the local consul agent"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: "{{ homeassistant_service_name }}-{{ item.value }}"
+        service_port: "{{ item.value | int }}"
+        # service_address: "{{ ansible_host }}"
+        state: absent
+      loop: "{{ homeassistant_service_ports }}"
+      when: service_consul_running
+
+    - name: Stop Nextcloud container
+      become: yes
+      docker_container:
+        name: "{{ homeassistant_service_name }}"
+        state: absent
+      when: homeassistant_volume_recreate != 'never'
+
+    - name: Create environmental file
+      template:
+        src: "{{ playbook_dir }}/templates/nextcloud.env.j2"
+        dest: "{{ homeassistant_env_file }}"
+
+    - name: Create volume for Nextcloud container data
+      become: yes
+      docker_volume:
+        name: "{{ homeassistant_volume_data }}"
+        recreate: "{{ homeassistant_volume_recreate }}"
+        state: present
+
+    - name: Start Nextcloud container
+      become: yes
+      docker_container:
+        name: "{{ homeassistant_service_name }}"
+        image: nextcloud
+        # env_file: "{{ homeassistant_env_file }}"
+        published_ports:
+          - 8080:80
+        recreate: yes
+        state: started
+        volumes:
+          - "{{ homeassistant_volume_data }}:/var/www/html"
+
+    - name: "Register {{ homeassistant_service_name }} service with the local consul agent"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: "{{ homeassistant_service_name }}-{{ item.value }}"
+        service_port: "{{ item.value | int }}"
+        # service_address: "{{ ansible_host }}"
+        state: present
+      loop: "{{ homeassistant_service_ports }}"
+      when: service_consul_running

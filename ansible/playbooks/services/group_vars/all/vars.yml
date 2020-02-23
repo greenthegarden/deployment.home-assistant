@@ -1,0 +1,4 @@
+---
+
+emqx_auth_user_name: homeassistant
+emqx_auth_user_password: h0me@ss!st@nt
