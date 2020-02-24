@@ -7,7 +7,7 @@ VAGRANTFILE_API_VERSION = '2'
 
 # Require the YAML module and Azure provider plugin
 require 'yaml'
-require 'vagrant-azure'
+# require 'vagrant-azure'
 
 # Load settings from vagrant.yml or vagrant.yml.dist
 current_dir = File.dirname(File.expand_path(__FILE__))
@@ -28,8 +28,8 @@ services_node_settings = config_file['configs'][config_file['configs']['use']]['
 vb_settings = config_file['configs'][config_file['configs']['use']]['vb']
 
 # Define references which do not change with names
-controller_node_base = "controller-node"
-services_node_base = "services-node"
+# controller_node_base = "controller-node"
+# services_node_base = "services-node"
 
 puts "Project name: %s" % project_name
 puts "Using configurations for %s" % run_use
@@ -67,10 +67,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # # Create nodes for services to be deployed on
   (1..services_node_count).each do |i|
 
-    services_node_name = project_name + "-" + services_node_settings['name'] + "-" + String(i)
+    services_node_name = config_file['configs']['project'] + "-" + services_node_settings['name'] + "-" + String(i)
     puts "Services node name set to %s" % services_node_name
 
-    services_node_machine = services_node_base + "-" + String(i)
+    services_node_machine = services_node_name #services_node_base + "-" + String(i)
 
     config.vm.define services_node_machine do |services_node|
 
@@ -86,7 +86,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # services_node_ip = generate_node_ip(vb_settings, services_node_ip_base)
         # puts "Services node IP address set to %s" % services_node_ip
 
-        services_node.vm.network :private_network, ip: "172.16.2.#{i + 100}"
+        services_node.vm.network "private_network", ip: "172.16.1.#{i + 100}", virtualbox__intnet: true
 
         vb.name = services_node_name
         vb.cpus = services_node_settings['vb']['resources']['cpus']
@@ -121,11 +121,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Create a machine to run Ansible
 
-  controller_node_machine = controller_node_base
+  controller_node_machine = config_file['configs']['project'] + "-" + controller_node_settings['name']
 
   config.vm.define controller_node_machine do |controller_node|
 
-    controller_node_name = project_name + "-" + controller_node_settings['name']
+    controller_node_name = controller_node_machine # config_file['configs']['project'] + "-" + controller_node_settings['name']
 
     # Specify the hostname of the machine
     controller_node.vm.hostname = controller_node_name
@@ -144,7 +144,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       # controller_node_ip = generate_node_ip(vb_settings, controller_node_ip_base)
       # # puts "Controller node IP address set to %s" % controller_node_ip
 
-      controller_node.vm.network :private_network, ip: "172.16.2.10"
+      controller_node.vm.network "private_network", ip: "172.16.1.10", virtualbox__intnet: true
 
       vb.name = controller_node_name
       vb.memory = controller_node_settings['vb']['resources']['memory']
@@ -169,7 +169,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     controller_node.vm.provision :ansible_local do |ansible|
 
       ansible.install_mode = "pip"
-      ansible.version = "2.9.5"
+      # ansible.version = "2.9.5"
       ansible.compatibility_mode = "2.0"
       ansible.install = true
       ansible.limit = "all"

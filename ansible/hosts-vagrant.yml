@@ -7,9 +7,9 @@ all:
     controller-node:
       ansible_host: localhost
       ansible_connection: local
-    nextcloud-vm:
+    homeassistant-vm:
       # ansible_host: services-node-1
-      ansible_host: 172.16.2.101
+      ansible_ssh_host: 172.16.1.101
       ansible_ssh_private_key_file: /home/vagrant/.ssh/id_ed25519
       ansible_ssh_user: vagrant
       consul_node_role: bootstrap
@@ -29,8 +29,8 @@ all:
     consul_iface: eth1
     # consul_recursors: ['172.16.1.254']
     # consul_dnsmasq_servers: ['/dc1/172.16.1.254']
-    consul_join_wan: ['172.16.2.101']
-    consul_advertise_address_wan: '172.16.2.101'
+    consul_join_wan: ['172.16.1.101']
+    consul_advertise_address_wan: '172.16.1.101'
     consul_client_address: "{{ ansible_host }}"
     consul_dnsmasq_enable: yes
     consul_connect_enabled: yes
@@ -41,16 +41,20 @@ all:
 
     services_nodes:
       hosts:
-        nextcloud-vm:
+        homeassistant-vm:
+
+    monitoring_instances:
+      hosts:
+        homeassistant-vm:
 
     emqx_instances:
       hosts:
-        nextcloud-vm:
+        homeassistant-vm:
 
     tick_instances:
       hosts:
-        nextcloud-vm:
+        homeassistant-vm:
 
     homeassistant_instances:
       hosts:
-        nextcloud-vm:
+        homeassistant-vm:

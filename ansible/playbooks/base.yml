@@ -56,16 +56,6 @@
       import_role:
         name: brianshumate.consul
 
-    # - name: Install node-exporter
-    #   become: yes
-    #   import_role:
-    #     name: cloudalchemy.node-exporter
-
-    # - name: Install prometheus
-    #   become: yes
-    #   import_role:
-    #     name: cloudalchemy.prometheus
-
     - name: Install, configure and start Docker
       become: yes
       import_role:

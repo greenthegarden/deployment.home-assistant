@@ -1,0 +1,21 @@
+---
+
+- name: Install and configure Nextcloud on nodes within the homeassistant_instances group
+  
+  hosts: monitoring_instances
+
+  vars:
+
+  pre_tasks:
+
+  tasks:
+
+    - name: Install node-exporter
+      become: yes
+      import_role:
+        name: cloudalchemy.node-exporter
+
+    - name: Install Prometheus
+      become: yes
+      import_role:
+        name: cloudalchemy.prometheus
