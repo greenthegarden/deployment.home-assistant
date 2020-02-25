@@ -16,9 +16,9 @@ all:
 
   vars:
 
-    ansible_python_interpreter: /usr/bin/python3
-    pip_package: python3-pip
-    pip_executable: pip3
+    # ansible_python_interpreter: /usr/bin/python3
+    # pip_package: python3-pip
+    # pip_executable: pip3
 
     # do not change as used to provision consul on all services_nodes
     consul_group_name: services_nodes

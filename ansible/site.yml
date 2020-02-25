@@ -1,5 +1,7 @@
 ---
 
+# Ensure dependencies are installed on controller
+- import_playbook: playbooks/controller.yml
 # Ensure all host tasks are performed first, set of common tasks
 - import_playbook: playbooks/base.yml
 # Run role to install and set up host monitoring on hosts specified as monitoring_instances
@@ -7,6 +9,6 @@
 # Run role to install and set up the EMQ-X Broker on hosts specified as emqx_instances
 - import_playbook: playbooks/emqx.yml
 # Run role to install and set up TICK stack on hosts specified as tick_instances
-- import_playbook: playbooks/tick.yml
+# - import_playbook: playbooks/tick.yml
 # Run role to install and set up Home-assistant on hosts specified as homeassistant_instances
 # - import_playbook: playbooks/home-assistant.yml

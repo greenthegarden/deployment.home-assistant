@@ -6,8 +6,29 @@
 
   vars:
 
+    # # packages: [
+    # #   python-jmespath,
+    # # ]
+
+    # python_modules: [
+    #   jmespath,
+    # ]
+
+    # ansible_python_interpreter: /usr/bin/python3
+    # pip_package: python3-pip
+    # pip_executable: pip3
+
   pre_tasks:
 
+    - name: Install dependencies
+      become: yes
+      import_role:
+        name: greenthegarden.configure-host
+        tasks_from: install-dependencies
+      tags:
+        - base
+        - dependencies
+        
   tasks:
 
     - name: Install node-exporter
