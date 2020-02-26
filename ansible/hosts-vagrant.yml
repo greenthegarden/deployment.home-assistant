@@ -7,6 +7,9 @@ all:
     controller-node:
       ansible_host: localhost
       ansible_connection: local
+      ansible_python_interpreter: /usr/bin/python
+      pip_package: python-pip
+      pip_executable: pip2
     homeassistant-vm:
       # ansible_host: services-node-1
       ansible_ssh_host: 172.16.1.101
@@ -16,16 +19,16 @@ all:
 
   vars:
 
-    # ansible_python_interpreter: /usr/bin/python3
-    # pip_package: python3-pip
-    # pip_executable: pip3
+    ansible_python_interpreter: /usr/bin/python3
+    pip_package: python3-pip
+    pip_executable: pip3
 
     # do not change as used to provision consul on all services_nodes
     consul_group_name: services_nodes
 
     service_consul_running: yes
 
-    # consul_datacenter: nextcloud
+    # consul_datacenter: ha
     consul_iface: eth1
     # consul_recursors: ['172.16.1.254']
     # consul_dnsmasq_servers: ['/dc1/172.16.1.254']
@@ -37,6 +40,10 @@ all:
     consul_version: '1.7.1'
     # consul_install_upgrade: yes
 
+
+    node_exporter_port: 9100
+    prometheus_service_port: 9090
+
   children:
 
     services_nodes:
@@ -46,6 +53,10 @@ all:
     monitoring_instances:
       hosts:
         homeassistant-vm:
+      vars:
+        prometheus_global:
+          scrape_interval: 5s
+          evaluation_interval: 5s
 
     emqx_instances:
       hosts:

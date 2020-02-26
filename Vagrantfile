@@ -86,7 +86,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # services_node_ip = generate_node_ip(vb_settings, services_node_ip_base)
         # puts "Services node IP address set to %s" % services_node_ip
 
-        services_node.vm.network "private_network", ip: "172.16.1.#{i + 100}", virtualbox__intnet: true
+        services_node.vm.network "private_network", ip: "172.16.1.#{i + 100}" #, virtualbox__intnet: true
 
         vb.name = services_node_name
         vb.cpus = services_node_settings['vb']['resources']['cpus']
@@ -144,7 +144,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       # controller_node_ip = generate_node_ip(vb_settings, controller_node_ip_base)
       # # puts "Controller node IP address set to %s" % controller_node_ip
 
-      controller_node.vm.network "private_network", ip: "172.16.1.10", virtualbox__intnet: true
+      controller_node.vm.network "private_network", ip: "172.16.1.10" #, virtualbox__intnet: true
 
       vb.name = controller_node_name
       vb.memory = controller_node_settings['vb']['resources']['memory']

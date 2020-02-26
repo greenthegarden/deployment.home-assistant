@@ -45,7 +45,7 @@
       consul:
         host: "{{ consul_client_address }}"
         service_name: "{{ emqx_service_name }}-{{ item.value }}"
-        service_port: "{{ item.value | int }}"
+        # service_port: "{{ item.value | int }}"
         # service_address: "{{ ansible_host }}"
         state: absent
       loop: "{{ emqx_service_ports }}"
@@ -57,6 +57,7 @@
         dest: "{{ emqx_env_file }}"
 
     - name: "Run image {{ emqx_image_name }}:{{ emqx_image_tag }} as service {{ emqx_service_name }}"
+      become: yes
       docker_container:
         name: "{{ emqx_service_name }}"
         image: "{{ emqx_image_name }}:{{ emqx_image_tag }}"

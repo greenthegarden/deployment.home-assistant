@@ -6,6 +6,9 @@
 
   vars:
 
+    node_exporter_port: 9100
+    prometheus_service_port: 9090
+
     # # packages: [
     # #   python-jmespath,
     # # ]
@@ -17,6 +20,8 @@
     # ansible_python_interpreter: /usr/bin/python3
     # pip_package: python3-pip
     # pip_executable: pip3
+
+    prometheus_bind_address: "{{ ansible_eth1.ipv4.address }}"
 
   pre_tasks:
 
@@ -40,3 +45,16 @@
       become: yes
       import_role:
         name: cloudalchemy.prometheus
+
+    # Register service from controller
+    - name: Register Prometheus service with Consul
+      # delegate_to: "{{ ansible_controller }}"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: prometheus
+        service_port: "{{ prometheus_service_port }}"
+        service_address: "{{ prometheus_bind_address }}"
+        interval: 60s
+        http: "http://{{ prometheus_bind_address }}:{{ prometheus_service_port }}/api/v1/status/runtimeinfo"
+      when: service_consul_running
+      
