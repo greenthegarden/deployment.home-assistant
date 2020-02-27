@@ -33,9 +33,9 @@
     emqx_volume_recreate: always # one of: always, never or options-changed
 
     emqx_plugins: 'emqx_management,emqx_auth_username,emqx_auth_clientid,emqx_dashboard'
-    emqx_allow_anonymous: false | string
-    emqx_dashboard_default_user_name: ''
-    emqx_dashboard_default_user_password: ''
+    emqx_allow_anonymous: false
+    emqx_dashboard_default_user_name: 'admin'
+    emqx_dashboard_default_user_password: 'public'
 
   pre_tasks:
 
