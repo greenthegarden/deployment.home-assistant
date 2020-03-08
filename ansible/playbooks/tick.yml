@@ -55,11 +55,27 @@
   tasks:
 
     - name: Install and configure InfluxDB
+      become: yes
       import_role:
         name: greenthegarden.influxdb
         tasks_from: container
 
-    - name: Install and configure Telegraf
-      import_role:
-        name: dj-wasabi.telegraf
+    # - name: Install and configure Telegraf
+    #   import_role:
+    #     name: dj-wasabi.telegraf
 
+    - name: Install and configure Telegraf
+      become: yes
+      import_role:
+        name: greenthegarden.telegraf
+        tasks_from: container
+
+    # - name: Install and configure Chonograf
+    #   import_role:
+    #     name: greenthegarden.chonograf
+    #     tasks_from: container.yml
+
+    # - name: Install and configure Kapacitor
+    #   import_role:
+    #     name: greenthegarden.kapacitor
+    #     tasks_from: container.yml

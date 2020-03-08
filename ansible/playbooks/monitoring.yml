@@ -1,27 +1,33 @@
 ---
 
-- name: Install and configure Nextcloud on nodes within the homeassistant_instances group
+- name: Install and configure monitoring service on nodes within the monitoring_instances group
   
   hosts: monitoring_instances
 
   vars:
 
     node_exporter_port: 9100
+
     prometheus_service_port: 9090
+    # prometheus_bind_address: "{{ ansible_eth1.ipv4.address }}"
 
-    # # packages: [
-    # #   python-jmespath,
-    # # ]
+    file_scrape_config_dir: "/etc/prometheus"
 
-    # python_modules: [
-    #   jmespath,
-    # ]
+    data_center_hosts: "\
+      {% set _inventory_servers = [] %}\
+      {% for host in groups['all'] %}\
+      {% if _inventory_servers.append(host) %}{% endif %}\
+      {% endfor %}\
+      {{ _inventory_servers }}"
 
-    # ansible_python_interpreter: /usr/bin/python3
-    # pip_package: python3-pip
-    # pip_executable: pip3
-
-    prometheus_bind_address: "{{ ansible_eth1.ipv4.address }}"
+    prometheus_bind_address: "\
+      {% if ansible_system == 'FreeBSD' %}\
+        {{ lookup('env','PROMETHEUS_BIND_ADDRESS') | default(hostvars[inventory_hostname]['ansible_'+ public_iface ]['ipv4'][0]['address'], true) }}\
+      {% elif ansible_os_family == 'Windows'  %}\
+        {{ lookup('env','PROMETHEUS_BIND_ADDRESS') | default(hostvars[inventory_hostname]['ansible_ip_addresses'][0], true) }}\
+      {% else %}\
+        {{ lookup('env','PROMETHEUS_BIND_ADDRESS') | default(hostvars[inventory_hostname]['ansible_'+ public_iface | replace('-', '_')]['ipv4']['address'], true) }}\
+      {% endif %}"
 
   pre_tasks:
 
@@ -36,10 +42,25 @@
         
   tasks:
 
-    - name: Install node-exporter
-      become: yes
-      import_role:
-        name: cloudalchemy.node-exporter
+    - name: Create Prometheus config directory
+      become: true
+      file:
+        dest: "{{ file_scrape_config_dir }}"
+        state: directory
+
+    - name: "Generate file scrape config for Prometheus"
+      become: true
+      template:
+        src: datacenter_hosts.yml.j2
+        dest: "{{ file_scrape_config_dir }}/datacenter_hosts.yml"
+
+    - name: "Unregister Prometheus service with the local consul agent"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: prometheus
+        service_port: "{{ prometheus_service_port }}"
+        state: absent
+      when: service_consul_running
 
     - name: Install Prometheus
       become: yes
@@ -57,4 +78,3 @@
         interval: 60s
         http: "http://{{ prometheus_bind_address }}:{{ prometheus_service_port }}/api/v1/status/runtimeinfo"
       when: service_consul_running
-      

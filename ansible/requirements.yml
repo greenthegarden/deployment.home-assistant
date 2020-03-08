@@ -65,6 +65,11 @@
   src: git+https://github.com/greenthegarden/ansible-role-kapacitor.git
   version: origin/master
 
+- name: greenthegarden.telegraf
+  cms: git
+  src: git+https://github.com/greenthegarden/ansible-role-telegraf.git
+  version: origin/master
+
 - name: dj-wasabi.telegraf
   cms: git
   src: git+https://github.com/dj-wasabi/ansible-telegraf.git

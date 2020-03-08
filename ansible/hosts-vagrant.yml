@@ -16,6 +16,8 @@ all:
       ansible_ssh_private_key_file: /home/vagrant/.ssh/id_ed25519
       ansible_ssh_user: vagrant
       consul_node_role: bootstrap
+      public_iface: eth1
+      public_bind_address: "{{ ansible_ssh_host }}"
 
   vars:
 
@@ -26,10 +28,11 @@ all:
     # do not change as used to provision consul on all services_nodes
     consul_group_name: services_nodes
 
-    service_consul_running: yes
+    service_consul_running: no
 
     # consul_datacenter: ha
     consul_iface: eth1
+    consul_bind_address: '172.16.1.101'
     # consul_recursors: ['172.16.1.254']
     # consul_dnsmasq_servers: ['/dc1/172.16.1.254']
     consul_join_wan: ['172.16.1.101']
@@ -39,10 +42,6 @@ all:
     consul_connect_enabled: yes
     consul_version: '1.7.1'
     # consul_install_upgrade: yes
-
-
-    node_exporter_port: 9100
-    prometheus_service_port: 9090
 
   children:
 

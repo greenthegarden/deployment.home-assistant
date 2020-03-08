@@ -56,11 +56,18 @@
         src: "{{ playbook_dir }}/templates/emqx.env.j2"
         dest: "{{ emqx_env_file }}"
 
+    - name: "Pull image {{ emqx_image_name }}:{{ emqx_image_tag }}"
+      docker_image:
+        name: "{{ emqx_image_name }}"
+        tag: "{{ emqx_image_tag }}"
+        source: pull
+        
     - name: "Run image {{ emqx_image_name }}:{{ emqx_image_tag }} as service {{ emqx_service_name }}"
       become: yes
       docker_container:
         name: "{{ emqx_service_name }}"
         image: "{{ emqx_image_name }}:{{ emqx_image_tag }}"
+        dns_servers: "{{ consul_bind_address }}"
         # env:
         #   EMQX_LOADED_PLUGINS: "{{ emqx_plugins }}"
         #   EMQX_ALLOW_ANONYMOUS: "{{ emqx_allow_anonymous }}"
