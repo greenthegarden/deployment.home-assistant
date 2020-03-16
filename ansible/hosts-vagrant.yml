@@ -17,13 +17,15 @@ all:
       ansible_ssh_user: vagrant
       consul_node_role: bootstrap
       public_iface: eth1
-      public_bind_address: "{{ ansible_ssh_host }}"
+      # public_bind_address: "{{ ansible_ssh_host }}"
 
   vars:
 
     ansible_python_interpreter: /usr/bin/python3
     pip_package: python3-pip
     pip_executable: pip3
+
+    # services_bind_address: "{{ ansible_ssh_host }}"
 
     # do not change as used to provision consul on all services_nodes
     consul_group_name: services_nodes
@@ -33,8 +35,8 @@ all:
     # consul_datacenter: ha
     consul_iface: eth1
     consul_bind_address: '172.16.1.101'
-    # consul_recursors: ['172.16.1.254']
-    # consul_dnsmasq_servers: ['/dc1/172.16.1.254']
+    consul_recursors: ['192.168.1.254']
+    consul_dnsmasq_servers: ['192.168.1.254', '8.8.8.8', '8.8.4.4']
     consul_join_wan: ['172.16.1.101']
     consul_advertise_address_wan: '172.16.1.101'
     consul_client_address: "{{ ansible_host }}"

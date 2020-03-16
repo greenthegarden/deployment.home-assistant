@@ -6,3 +6,5 @@ emqx_auth_user_password: h0me@ss!st@nt
 node_exporter_port: 9100
 
 prometheus_service_port: 9090
+
+telegraf_database_name: telegraf

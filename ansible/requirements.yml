@@ -50,27 +50,28 @@
   src: git+https://github.com/greenthegarden/ansible-role-raspi-config.git
   version: origin/master
 
-- name: greenthegarden.chonograf
-  cms: git
-  src: git+https://github.com/greenthegarden/ansible-role-chonograf.git
-  version: origin/master
+# - name: greenthegarden.chonograf
+#   cms: git
+#   src: git+https://github.com/greenthegarden/ansible-role-chonograf.git
+#   version: origin/master
 
-- name: greenthegarden.influxdb
-  cms: git
-  src: git+https://github.com/greenthegarden/ansible-role-influxdb.git
-  version: origin/master
+# - name: greenthegarden.influxdb
+#   cms: git
+#   src: git+https://github.com/greenthegarden/ansible-role-influxdb.git
+#   version: origin/master
 
-- name: greenthegarden.kapacitor
-  cms: git
-  src: git+https://github.com/greenthegarden/ansible-role-kapacitor.git
-  version: origin/master
+# - name: greenthegarden.kapacitor
+#   cms: git
+#   src: git+https://github.com/greenthegarden/ansible-role-kapacitor.git
+#   version: origin/master
 
-- name: greenthegarden.telegraf
-  cms: git
-  src: git+https://github.com/greenthegarden/ansible-role-telegraf.git
-  version: origin/master
+# - name: greenthegarden.telegraf
+#   cms: git
+#   src: git+https://github.com/greenthegarden/ansible-role-telegraf.git
+#   version: origin/master
 
 - name: dj-wasabi.telegraf
   cms: git
   src: git+https://github.com/dj-wasabi/ansible-telegraf.git
   version: origin/master
+  

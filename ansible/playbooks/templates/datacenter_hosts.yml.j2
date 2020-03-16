@@ -1,7 +1,7 @@
 ---
 
 - targets:
-{% for host in data_center_hosts %}
+{% for host in services_hosts %}
   - '{{ host }}:{{ node_exporter_port }}'
 {% endfor %}
   labels:

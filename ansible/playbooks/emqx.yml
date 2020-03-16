@@ -6,6 +6,15 @@
 
   vars:
 
+    emqx_bind_address: "\
+      {% if ansible_system == 'FreeBSD' %}\
+        {{ lookup('env','EMQX_BIND_ADDRESS') | default(hostvars[inventory_hostname]['ansible_'+ public_iface ]['ipv4'][0]['address'], true) }}\
+      {% elif ansible_os_family == 'Windows'  %}\
+        {{ lookup('env','EMQX_BIND_ADDRESS') | default(hostvars[inventory_hostname]['ansible_ip_addresses'][0], true) }}\
+      {% else %}\
+        {{ lookup('env','EMQX_BIND_ADDRESS') | default(hostvars[inventory_hostname]['ansible_'+ public_iface | replace('-', '_')]['ipv4']['address'], true) }}\
+      {% endif %}"
+
     emqx_dir_config: "{{ storage_base.path }}/emqx/config"
     emqx_env_file:  /tmp/emqx.env
 
@@ -57,6 +66,7 @@
         dest: "{{ emqx_env_file }}"
 
     - name: "Pull image {{ emqx_image_name }}:{{ emqx_image_tag }}"
+      become: yes
       docker_image:
         name: "{{ emqx_image_name }}"
         tag: "{{ emqx_image_tag }}"
@@ -67,7 +77,12 @@
       docker_container:
         name: "{{ emqx_service_name }}"
         image: "{{ emqx_image_name }}:{{ emqx_image_tag }}"
-        dns_servers: "{{ consul_bind_address }}"
+        dns_search_domains:
+          - service.consul
+        dns_servers:
+          - "{{ consul_bind_address }}"
+          - 192.168.1.254
+          - 8.8.8.8
         # env:
         #   EMQX_LOADED_PLUGINS: "{{ emqx_plugins }}"
         #   EMQX_ALLOW_ANONYMOUS: "{{ emqx_allow_anonymous }}"
@@ -93,7 +108,7 @@
         host: "{{ consul_client_address }}"
         service_name: "{{ emqx_service_name }}-{{ item.value }}"
         service_port: "{{ item.value | int }}"
-        # service_address: "{{ ansible_host }}"
+        service_address: "{{ emqx_bind_address }}"
         state: present
       loop: "{{ emqx_service_ports }}"
       when: service_consul_running

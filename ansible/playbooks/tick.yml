@@ -6,6 +6,30 @@
 
   vars:
 
+    influxdb_bind_address: "\
+      {% if ansible_system == 'FreeBSD' %}\
+        {{ lookup('env','INFLUXDB_BIND_ADDRESS') | default(hostvars[inventory_hostname]['ansible_'+ public_iface ]['ipv4'][0]['address'], true) }}\
+      {% elif ansible_os_family == 'Windows'  %}\
+        {{ lookup('env','INFLUXDB_BIND_ADDRESS') | default(hostvars[inventory_hostname]['ansible_ip_addresses'][0], true) }}\
+      {% else %}\
+        {{ lookup('env','INFLUXDB_BIND_ADDRESS') | default(hostvars[inventory_hostname]['ansible_'+ public_iface | replace('-', '_')]['ipv4']['address'], true) }}\
+      {% endif %}"
+
+    influxdb_image_name: influxdb
+    influxdb_image_tag: 1.7.10
+
+    influxdb_volume_name: influxdb
+    influxdb_volume_recreate: always
+
+    influxdb_service_name: influxdb
+    influxdb_service_ports_http: 8086
+    influxdb_service_ports: [
+      { label: http, value: "{{ influxdb_service_ports_http }}" },
+    ]
+    influxdb_service_restart_policy: always
+
+    telegraf_database_name: telegraf
+
     telegraf_global_tags:
       - tag_name: user
         tag_value: "telegraf"
@@ -13,7 +37,7 @@
     telegraf_agent_output:
       - type: influxdb
         config:
-          - urls = ["http://{{ ansible_host }}:8086"]
+          - urls = ["http://{{ consul_bind_address }}:8086"]
           - database = "{{ telegraf_database_name }}"
           - precision = "s"
           - password = "t#l#gr@f"
@@ -41,7 +65,7 @@
     telegraf_plugins_extra:
       mqtt_consumer:
         config:
-          - servers = ["tcp://{{ ansible_host }}:1883"]
+          - servers = ["tcp://{{ consul_bind_address }}:1883"]
           - topics = [
               "theairboard/+/measurement/dht22/temperature",
               "enviroplus/+/weather",
@@ -54,21 +78,81 @@
 
   tasks:
 
-    - name: Install and configure InfluxDB
-      become: yes
-      import_role:
-        name: greenthegarden.influxdb
-        tasks_from: container
-
-    # - name: Install and configure Telegraf
+    # - name: Install and configure InfluxDB
+    #   become: yes
     #   import_role:
-    #     name: dj-wasabi.telegraf
+    #     name: greenthegarden.influxdb
+    #     tasks_from: container
+
+    - name: "Unregister {{ influxdb_service_name }} service with the local consul agent"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: "{{ influxdb_service_name }}-{{ item.value }}"
+        state: absent
+      loop: "{{ influxdb_service_ports }}"
+      when: service_consul_running
+
+    - name: "Stop and remove {{ influxdb_service_name }} container"
+      become: yes
+      docker_container:
+        name: "{{ influxdb_service_name }}"
+        state: absent
+      when: influxdb_volume_recreate != 'never'
+
+    - name: "Create {{ influxdb_volume_name }} docker volume"
+      become: yes
+      docker_volume:
+        name: "{{ influxdb_volume_name }}"
+        recreate: "{{ influxdb_volume_recreate }}"
+        state: present
+
+    - name: "Pull image {{ influxdb_image_name }}:{{ influxdb_image_tag }}"
+      become: yes
+      docker_image:
+        name: "{{ influxdb_image_name }}"
+        tag: "{{ influxdb_image_tag }}"
+        source: pull
+
+    # docker run -p 8086:8086 -v influxdb:/var/lib/influxdb influxdb
+    - name: "Run image {{ influxdb_image_name }}:{{ influxdb_image_tag }} as service {{ influxdb_service_name }}"
+      become: yes
+      docker_container:
+        name: "{{ influxdb_service_name }}"
+        image: "{{ influxdb_image_name }}:{{ influxdb_image_tag }}"
+        dns_search_domains:
+          - service.consul
+        dns_servers:
+          - "{{ consul_bind_address }}"
+          - 192.168.1.254
+          - 8.8.8.8
+        published_ports:
+          - "{{ influxdb_service_ports_http }}:8086"
+        recreate: yes
+        restart_policy: always
+        state: started
+        volumes:
+          - "{{ influxdb_volume_name }}:/var/lib/influxdb"    
+      register: influxdb_service_launched
+
+    - name: "Register {{ influxdb_service_name }} service with the local consul agent"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: "{{ influxdb_service_name}}-{{ item.value }}"
+        service_port: "{{ item.value | int }}"
+        service_address: "{{ influxdb_bind_address }}"
+        state: present
+      loop: "{{ influxdb_service_ports }}"
+      when: service_consul_running
 
     - name: Install and configure Telegraf
-      become: yes
       import_role:
-        name: greenthegarden.telegraf
-        tasks_from: container
+        name: dj-wasabi.telegraf
+
+    # - name: Install and configure Telegraf
+    #   become: yes
+    #   import_role:
+    #     name: greenthegarden.telegraf
+    #     tasks_from: container
 
     # - name: Install and configure Chonograf
     #   import_role:
