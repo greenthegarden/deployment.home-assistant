@@ -74,6 +74,30 @@
             ]
           - data_format = "influx"
 
+    chronograf_image_name: chronograf
+    chronograf_image_tag: 1.8.0
+
+    chronograf_volume_name: chronograf
+    chronograf_volume_recreate: always
+
+    chronograf_service_name: chronograf
+    chronograf_service_ports_http: 8888
+    chronograf_service_ports: [
+      { label: http, value: "{{ chronograf_service_ports_http }}" },
+    ]
+
+    kapacitor_image_name: kapacitor
+    kapacitor_image_tag: 1.5.4
+
+    kapacitor_volume_name: kapacitor
+    kapacitor_volume_recreate: always
+
+    kapacitor_service_name: kapacitor
+    kapacitor_service_ports_http: 9092
+    kapacitor_service_ports: [
+      { label: http, value: "{{ kapacitor_service_ports_http }}" },
+    ]
+
   pre_tasks:
 
   tasks:
@@ -99,7 +123,7 @@
         state: absent
       when: influxdb_volume_recreate != 'never'
 
-    - name: "Create {{ influxdb_volume_name }} docker volume"
+    - name: "Create {{ influxdb_volume_name }} Docker volume"
       become: yes
       docker_volume:
         name: "{{ influxdb_volume_name }}"
@@ -123,8 +147,6 @@
           - service.consul
         dns_servers:
           - "{{ consul_bind_address }}"
-          - 192.168.1.254
-          - 8.8.8.8
         published_ports:
           - "{{ influxdb_service_ports_http }}:8086"
         recreate: yes
@@ -159,7 +181,124 @@
     #     name: greenthegarden.chonograf
     #     tasks_from: container.yml
 
+    - name: "Unregister {{ chronograf_service_name }} service with the local consul agent"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: "{{ chronograf_service_name }}-{{ item.value }}"
+        service_port: "{{ item.value }}"
+        state: absent
+      loop: "{{ chronograf_service_ports }}"
+      when: service_consul_running
+
+    - name: "Stop and remove {{ chronograf_service_name }} container"
+      become: yes
+      docker_container:
+        name: "{{ chronograf_service_name }}"
+        state: absent
+      when: chronograf_volume_recreate != 'never'
+
+    - name: "Create {{ chronograf_volume_name }} Docker volume"
+      become: yes
+      docker_volume:
+        name: "{{ chronograf_volume_name }}"
+        recreate: "{{ chronograf_volume_recreate }}"
+        state: present
+
+    - name: "Pull image {{ chronograf_image_name }}:{{ chronograf_image_tag }}"
+      become: yes
+      docker_image:
+        name: "{{ chronograf_image_name }}"
+        tag: "{{ chronograf_image_tag }}"
+        source: pull
+
+    - name: "Run image {{ chronograf_image_name }}:{{ chronograf_image_tag }} as service {{ chronograf_service_name }}"
+      become: yes
+      docker_container:
+        name: "{{ chronograf_service_name }}"
+        image: "{{ chronograf_image_name }}:{{ chronograf_image_tag }}"
+        dns_search_domains:
+          - service.consul
+        dns_servers:
+          - "{{ consul_bind_address }}"
+        published_ports:
+          - "{{ chronograf_service_ports_http }}:8888"
+        volumes:
+          - "{{ chronograf_volume_name }}:/var/lib/chronograf"
+        recreate: yes
+        restart_policy: always
+        state: started
+      register: chronograf_service_launched
+
+    - name: "Register {{ chronograf_service_name }} service with the local consul agent"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: "{{ chronograf_service_name}}-{{ item.value }}"
+        service_port: "{{ item.value | int }}"
+        service_address: "{{ influxdb_bind_address }}"
+        state: present
+      loop: "{{ chronograf_service_ports }}"
+      when: service_consul_running
+
     # - name: Install and configure Kapacitor
     #   import_role:
     #     name: greenthegarden.kapacitor
     #     tasks_from: container.yml
+
+    - name: "Unregister {{ kapacitor_service_name }} service with the local consul agent"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: "{{ kapacitor_service_name }}-{{ item.value }}"
+        service_port: "{{ item.value }}"
+        state: absent
+      loop: "{{ kapacitor_service_ports }}"
+      when: service_consul_running
+
+    - name: "Stop and remove {{ kapacitor_service_name }} container"
+      become: yes
+      docker_container:
+        name: "{{ kapacitor_service_name }}"
+        state: absent
+      when: kapacitor_volume_recreate != 'never'
+
+    - name: "Create {{ kapacitor_volume_name }} Docker volume"
+      become: yes
+      docker_volume:
+        name: "{{ kapacitor_volume_name }}"
+        recreate: "{{ kapacitor_volume_recreate }}"
+        state: present
+
+    - name: "Pull image {{ kapacitor_image_name }}:{{ kapacitor_image_tag }}"
+      become: yes
+      docker_image:
+        name: "{{ kapacitor_image_name }}"
+        tag: "{{ kapacitor_image_tag }}"
+        source: pull
+
+    - name: "Run image {{ kapacitor_image_name }}:{{ kapacitor_image_tag }} as service {{ kapacitor_service_name }}"
+      become: yes
+      docker_container:
+        name: "{{ kapacitor_service_name }}"
+        image: "{{ kapacitor_image_name }}:{{ kapacitor_image_tag }}"
+        dns_search_domains:
+          - service.consul
+        dns_servers:
+          - "{{ consul_bind_address }}"
+        published_ports:
+          - "{{ kapacitor_service_ports_http }}:9092"
+        volumes:
+          - "{{ kapacitor_volume_name }}:/var/lib/kapacitor"
+
+        recreate: yes
+        restart_policy: always
+        state: started
+      register: kapacitor_service_launched
+
+    - name: "Register {{ kapacitor_service_name }} service with the local consul agent"
+      consul:
+        host: "{{ consul_client_address }}"
+        service_name: "{{ kapacitor_service_name}}-{{ item.value }}"
+        service_port: "{{ item.value | int }}"
+        service_address: "{{ influxdb_bind_address }}"
+        state: present
+      loop: "{{ kapacitor_service_ports }}"
+      when: service_consul_running

@@ -81,8 +81,6 @@
           - service.consul
         dns_servers:
           - "{{ consul_bind_address }}"
-          - 192.168.1.254
-          - 8.8.8.8
         # env:
         #   EMQX_LOADED_PLUGINS: "{{ emqx_plugins }}"
         #   EMQX_ALLOW_ANONYMOUS: "{{ emqx_allow_anonymous }}"
